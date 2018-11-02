@@ -1,15 +1,11 @@
-const conf = require('../conf/config').setting;
-// const serverIp = '35.200.103.250';
-const MongoClient = require('mongodb').MongoClient;
-const mongoUri = 'mongodb+srv://gijoona:mongodb77@cluster-quester-euzkr.gcp.mongodb.net/test';
-// const mysql = require('mysql');
-// const conn = {
-//   host: conf.database.ip,
-//   user: 'root',
-//   // password: 'ngl1213',
-//   database: 'monolithic',
-//   multipleStatements: true  // 상품 등록 후 아이디를 알아오려고 설정
-// }
+const conf = require('../conf/config').setting,
+      mongoose = require('mongoose'),
+      Quest = require('../models/Quest');
+
+mongoose.Promise = require('bluebird');
+mongoose.connect('mongodb+srv://gijoona:mongodb77@cluster-quester-euzkr.gcp.mongodb.net/quester', { promiseLibrary: require('bluebird') })
+        .then(() => console.log('connection successful!!!'))
+        .catch((err) => console.error(err));
 
 const redis = require('redis').createClient(conf.redis.port, conf.redis.ip);  // redis 모듈 로드
 redis.on('error', function (err) {  // Redis 에러 처리
@@ -199,28 +195,20 @@ function inquiry (method, pathname, params, cb) {
     errormessage: 'success'
   };
 
-  MongoClient.connect(mongoUri, function(err, client) {
-    if(err) {
-      console.log('Error occurred while connecting to MongoDB Atlas...\n',err);
+  Quest.find({}, function (err, quest) {
+    if (err) {
+      response.errorcode = 1;
+      response.errormessage = err;
     }
-    let collection = client.db('test').collection('quests');
 
-    collection.find({}).toArray(function(err, results){
-      if(err) {
-        response.errorcode = 1;
-        response.errormessage = err;
-      }
-
-      if (results.length == 0) {
-        response.errorcode = 1;
-        response.errormessage = 'no data';
-        cb(response);
-      } else {
-        response.results = results;
-        cb(response);
-      }
-      client.close();
-    });
+    if (quest.length == 0) {
+      response.errorcode = 1;
+      response.errormessage = 'no data';
+      cb(response);
+    } else {
+      response.results = quest;
+      cb(response);
+    }
   });
 }
 
