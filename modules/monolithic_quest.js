@@ -195,20 +195,25 @@ function inquiry (method, pathname, params, cb) {
     errormessage: 'success'
   };
 
-  Quest.find({}, function (err, quest) {
-    if (err) {
-      response.errorcode = 1;
-      response.errormessage = err;
-    }
+  redis.get(params.authorization, function (err, data) {
+    let userInfo = JSON.parse(data);
 
-    if (quest.length == 0) {
-      response.errorcode = 1;
-      response.errormessage = 'no data';
-      cb(response);
-    } else {
-      response.results = quest;
-      cb(response);
-    }
+    Quest.find({ userId: userInfo._id }, function (err, quest) {
+      if (err) {
+        response.errorcode = 1;
+        response.errormessage = err;
+        cb(response);
+      }
+
+      if (quest.length == 0) {
+        response.errorcode = 1;
+        response.errormessage = 'no data';
+        cb(response);
+      } else {
+        response.results = quest;
+        cb(response);
+      }
+    });
   });
 }
 
