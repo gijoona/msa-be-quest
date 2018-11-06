@@ -108,38 +108,41 @@ function register (method, pathname, params, cb) {
     errorcode: 0,
     errormessage: 'success'
   };
-  if (parameters.length > 0) {
-    for (let param of parameters) {
-      if (param.code == null || param.category == null || param.name == null || param.description == null || param.useyn == null) {
-        response.errorcode = 1;
-        response.errormessage = 'Invalid Parameters';
-      }
-    }
-    if (response.errorcode == 1) {
+
+  redis.get(params.authorization, function (err, data) {
+    // TODO :: 퀘스트 저장 기능 개발 중
+    let userInfo = JSON.parse(data);
+    console.log(userInfo);
+
+    if (!parameters.title || !parameters.contents) {
+      response.errorcode = 1;
+      response.errormessage = 'Invalid Parameters';
       cb(response);
-    } else {
-      var connection = mysql.createConnection(conn);
-      connection.connect();
-      connection.query('insert into code(code, category, name, description, useyn) values ?',
-        [parameters.map(param => [param.code, param.category, param.name, param.description, param.useyn])],
-        (error, results, fields) => {
-          if (error) {
-            response.errorcode = 1;
-            response.errormessage = error;
-          } else {  // Redis에 상품 정보 저장
-            // const id = results[1][0].id;
-            // redis.set(id, JSON.stringify(params));
-          }
-          cb(response);
-        }
-      );
-      connection.end();
     }
-  } else {
-    response.errorcode = 1;
-    response.errormessage = 'Empty Insert Data';
-    cb(response);
-  }
+
+    let newQuest = new Quest({
+      userId: userInfo['_id'],
+      title: parameters.title,
+      contents: parameters.contents
+    });
+
+    newQuest.save(function (err, quest) {
+      if (err) {
+        response.errorcode = 1;
+        response.errormessage = err;
+        cb(response);
+      }
+
+      if (quest) {
+        response.results = quest;
+        cb(response)
+      } else {
+        response.errorcode = 1;
+        response.errormessage = 'Failed to save Quest Information';
+        cb(response);
+      }
+    });
+  });
 }
 
 function modify (method, pathname, params, cb) {
@@ -150,41 +153,22 @@ function modify (method, pathname, params, cb) {
     errormessage: 'success'
   };
 
-  if (parameters.length > 0) {
-    for (let param of parameters) {
-      if (param.id == null || param.code == null || param.category == null || param.name == null || param.description == null || param.useyn == null) {
-        response.errorcode = 1;
-        response.errormessage = 'Invalid Parameters';
-      }
+  Quest.findByIdAndUpdate(parameters['_id'], parameters, function (err, quest) {
+    if (err) {
+      response.errorcode = 1;
+      response.errormessage = err;
+      cb(response);
     }
-    if (response.errorcode == 1) {
+
+    if (quest) {
+      response.results = quest;
       cb(response);
     } else {
-      var connection = mysql.createConnection(conn);
-      let querys = '';
-      connection.connect();
-      for (let param of parameters) {
-        querys += `update code set code = '${param.code}', category = '${param.category}', name = '${param.name}', description = '${param.description}', useyn = ${param.useyn} where id = '${param.id}'; `;
-      }
-      connection.query(querys,
-      // connection.query('update code set code = ?, category = ?, name = ?, description = ?, useyn = ? where id = ?',
-      // [parameters.map(param => [param.code, param.category, param.name, param.description, param.useyn, param.id])],
-      (error, results, fields) => {
-        if (error) {
-          response.errorcode = 1;
-          response.errormessage = error;
-        } else {
-          // redis.set(params.id, JSON.stringify(params));
-        }
-        cb(response);
-      });
-      connection.end();
+      response.errorcode = 1;
+      response.errormessage = 'Failed to update quest information';
+      cb(response);
     }
-  } else {
-    response.errorcode = 1;
-    response.errormessage = 'Empty Modify Data';
-    cb(response);
-  }
+  });
 }
 
 function inquiry (method, pathname, params, cb) {
@@ -225,24 +209,13 @@ function unregister (method, pathname, params, cb) {
     errormessage: 'success'
   };
 
-  if (parameters.id == null) {
-    response.errorcode = 1;
-    response.errormessage = 'Invalid Parameters';
-    cb(response);
-  } else {
-    var connection = mysql.createConnection(conn);
-    connection.connect();
-    connection.query('delete from code where id = ?',
-    parameters.id,
-    (error, results, fields) => {
-      if (error) {
-        response.errorcode = 1;
-        response.errormessage = error;
-      } else {
-        redis.del(parameters.id); // Redis에 상품 정보 삭제
-      }
+  Quest.findByIdAndRemove(parameters['id'], function (err, quest) {
+    if (err) {
+      response.errorcode = 1;
+      response.errormessage = err;
       cb(response);
-    });
-    connection.end();
-  }
+    }
+
+    cb(response);
+  });
 }
