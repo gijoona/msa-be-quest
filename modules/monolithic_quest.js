@@ -123,9 +123,13 @@ function register (method, pathname, params, cb) {
     let newQuest = new Quest({
       userId: userInfo['_id'],
       title: parameters.title,
-      contents: parameters.contents
+      contents: parameters.contents,
+      tags: parameters.tags,
+      powerExp: parameters.powerExp,
+      staminaExp: parameters.staminaExp,
+      knowledgeExp: parameters.knowledgeExp,
+      relationExp: parameters.relationExp
     });
-
     newQuest.save(function (err, quest) {
       if (err) {
         response.errorcode = 1;
@@ -182,7 +186,7 @@ function inquiry (method, pathname, params, cb) {
   redis.get(params.authorization, function (err, data) {
     let userInfo = JSON.parse(data);
 
-    Quest.find({ userId: userInfo._id }, function (err, quest) {
+    Quest.find({ userId: userInfo['_id'] }, function (err, quest) {
       if (err) {
         response.errorcode = 1;
         response.errormessage = err;

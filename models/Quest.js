@@ -14,6 +14,25 @@ let QuestSchema = new Schema({
     type: String,
     required: true
   },
+  powerExp: {
+    type: Number,
+    default: 0
+  },
+  staminaExp: {
+    type: Number,
+    default: 0
+  },
+  knowledgeExp: {
+    type: Number,
+    default: 0
+  },
+  relationExp: {
+    type: Number,
+    default: 0
+  },
+  tags: {
+    type: [String]
+  },
   inputDt: {
     type: Date,
     defualt: Date.now
