@@ -18,11 +18,14 @@ redis.on('error', function (err) {  // Redis 에러 처리
     method: POST,
     url: /quest
     parameter: {
-      code: 코드
-      category: '코드 카테고리',
-      name: '코드명',
-      description: '코드 설명',
-      useyn: '사용여부'
+      title: 퀘스트제목,
+      userId: 등록유저고유코드(mongodb object id),
+      contents: 퀘스트내용,
+      powerExp: 힘 경험치,
+      staminaExp: 체력 경험치,
+      knowledgeExp: 지능 경험치,
+      relationExp: 인맥 경험치,
+      tags: 구분용 해시태그
     },
     result: {
       errorcode: '에러코드',
@@ -33,12 +36,14 @@ redis.on('error', function (err) {  // Redis 에러 처리
     method: PUT
     url: /quest,
     parameter: {
-      id: 코드아이디
-      code: 코드,
-      category: 코드 카테고리,
-      name: 코드명,
-      description: 코드 설명,
-      useyn: 사용여부
+      _id: 퀘스트고유코드(mongodb object id),
+      title: 퀘스트제목,
+      contents: 퀘스트내용,
+      powerExp: 힘 경험치,
+      staminaExp: 체력 경험치,
+      knowledgeExp: 지능 경험치,
+      relationExp: 인맥 경험치,
+      tags: 구분용 해시태그
     },
     result: {
       errorcode: 에러코드
@@ -49,18 +54,21 @@ redis.on('error', function (err) {  // Redis 에러 처리
     method: GET,
     url: /quest,
     parameter: {
-      useyn: 사용여부
+      userId: 등록유저ID(mongodb object id)
     },
     result: {
       errorcode: '에러코드',
       errormessage: '에러메시지',
-      results: [{  //'코드목록'
-        id: '고유번호',
-        code: 코드,
-        category: '코드 카테고리',
-        name: '코드명',
-        description: '코드 설명'
-        useyn: 사용여부
+      results: [{  //'퀘스트목록'
+        _id: '고유코드',
+        title: 퀘스트제목,
+        userId: '등록자유저고유코드',
+        contents: '퀘스트내용',
+        powerExp: '힘 경험치'
+        staminaExp: 체력 경험치,
+        knowledgeExp: 지능 경험치,
+        relationExp: 인맥 경험치,
+        tags: 구분용 해시태그
       }, ...]
     }
   }
@@ -68,7 +76,7 @@ redis.on('error', function (err) {  // Redis 에러 처리
     method: DELETE,
     url: /quest,
     parameter: {
-      id: '코드고유번호'
+      id: 퀘스트고유코드(mongodb object id)
     },
     result: {
       errorcode: '에러코드',
@@ -198,10 +206,50 @@ function inquiry (method, pathname, params, cb) {
         response.errormessage = 'no data';
         cb(response);
       } else {
-        response.results = quest;
-        cb(response);
+        let query = Quest.find();
+        query.exec(function (err, quests) {
+          console.log(err);
+          let reduceVal = { powerExp: 0, staminaExp: 0, knowledgeExp: 0, relationExp: 0 };
+          quests.forEach(function (quest) {
+            reduceVal.powerExp += quest.powerExp;
+            reduceVal.staminaExp += quest.staminaExp;
+            reduceVal.knowledgeExp += quest.knowledgeExp;
+            reduceVal.relationExp += quest.relationExp;
+          });
+
+          response.chartSeries = reduceVal;
+          response.results = quest;
+          cb(response);
+        });
+        // response.results = quest;
+        // cb(response);
       }
     });
+    // TODO :: Mongodb MapReduce를 활용하여 차트데이터 산출 - free tire에서는 mapReduce를 지원하지 않음
+    // let o = {};
+    // o.map = function () {
+    //   emit(this.userId, this);
+    // };
+    //
+    // o.reduce = function (userId, quests) {
+    //   let reduceVal = { powerExp: 0, staminaExp: 0, knowledgeExp: 0, relationExp: 0 };
+    //   quests.forEach(function (quest) {
+    //     reduceVal.powerExp += quest.powerExp;
+    //     reduceVal.staminaExp += quest.staminaExp;
+    //     reduceVal.knowledgeExp += quest.knowledgeExp;
+    //     reduceVal.relationExp += quest.relationExp;
+    //   });
+    //
+    //   return reduceVal;
+    // };
+    //
+    // Quest.mapReduce(
+    //   o,
+    //   function (err, results) {
+    //     if (err) console.log(err);
+    //     console.log(results);
+    //   }
+    // );
   });
 }
 

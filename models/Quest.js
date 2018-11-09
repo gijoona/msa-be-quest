@@ -33,6 +33,10 @@ let QuestSchema = new Schema({
   tags: {
     type: [String]
   },
+  state: {
+    type: String,
+    default: 'process'
+  },
   inputDt: {
     type: Date,
     defualt: Date.now
