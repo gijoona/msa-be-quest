@@ -118,7 +118,6 @@ function register (method, pathname, params, cb) {
   };
 
   redis.get(params.authorization, function (err, data) {
-    // TODO :: 퀘스트 저장 기능 개발 중
     let userInfo = JSON.parse(data);
     console.log(userInfo);
 
