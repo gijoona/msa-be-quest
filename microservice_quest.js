@@ -26,7 +26,7 @@ class quest extends require('./server.js') {
     });
   }
 
-  onRead (socket, data) { // onRead 구현
+  onRead (socket, data) { // onRead 구현 
     console.log('onRead', socket.remoteAddress, socket.remotePort, data);
     business.onRequest(socket, data.method, data.uri, data.params, (s, packet) => {
       socket.write(JSON.stringify(packet) + '¶');  // 응답 패킷 전송
